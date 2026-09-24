@@ -51,11 +51,7 @@ export function Hud() {
           {state.reloading ? 'RELOADING…' : `AMMO ${state.ammo} / ${state.maxAmmo}`}
         </div>
         {state.inHelicopter && <div style={{ fontSize: 16, color: '#ffe08f' }}>ROTOR {state.rotorRpm}</div>}
-<<<<<<< HEAD
-        <div style={{ opacity: 0.85 }}>{state.inHelicopter ? 'HELICOPTER — W/S fly · A/D turn · ↑/↓ altitude · ←/→ roll · E exit' : 'WASD move · Shift sprint · Space jump · E helicopter · LMB shoot'}</div>
-=======
         <div style={{ opacity: 0.85 }}>{state.inHelicopter ? 'HELICOPTER — SPACE rotor · W/S fly · A/D turn · ↑/↓ altitude · ←/→ roll · E exit' : 'WASD move · Shift sprint · Space jump · E helicopter · LMB shoot'}</div>
->>>>>>> dd8169b (OK)
       </div>
 
       <div
