@@ -5,6 +5,9 @@ import { heightAt } from './terrain'
 /** Seat offset where the player camera sits while piloting. */
 export const HELI_SEAT_OFFSET = new THREE.Vector3(0.0, 1.6, 0.4)
 
+/** Hard RPM ceiling — Space can never spool the propeller past this. */
+export const MAX_ROTOR_RPM = 100
+
 export interface Helicopter {
   object: THREE.Group
   update: (dt: number, time: number) => void
@@ -12,15 +15,15 @@ export interface Helicopter {
   updateRotorInput: (spoolUp: boolean, spoolDown: boolean, dt: number) => void
   setParked: (parked: boolean) => void
   parked: boolean
-  /** 0..100, matches the classic RPM HUD readout (x10 => up to 1000). */
+  /** 0..MAX_ROTOR_RPM, matches the classic RPM HUD readout (x10 => up to 1000). */
   getRotorSpeed: () => number
 }
 
 /**
  * Loads the animated helicopter GLB and drives its rotors manually exactly
- * like the standalone viewer: Space ramps target RPM, Shift ramps it down,
- * the main rotor spins on its local Z and the rear rotor on its local X
- * (correct for this model's baked transforms).
+ * like the standalone viewer: Space ramps target RPM (clamped at
+ * MAX_ROTOR_RPM), Shift ramps it down, the main rotor spins on its local Z
+ * and the rear rotor on its local X (correct for this model's bakes).
  *
  * Node names in this GLB: "main_rotor__0" and "rear_rotor_1" (rear, NOT tail —
  * which is why name searches for "tail rotor" used to fail).
@@ -33,7 +36,7 @@ export function createHelicopter(padWorldPos: THREE.Vector3, onLoaded?: (h: Heli
   const state = {
     rotorSpeed: 0,
     targetRotorSpeed: 0,
-    maxRotorSpeed: 100,
+    maxRotorSpeed: MAX_ROTOR_RPM,
     parked: true,
   }
 
@@ -53,6 +56,7 @@ export function createHelicopter(padWorldPos: THREE.Vector3, onLoaded?: (h: Heli
     updateRotorInput(spoolUp: boolean, spoolDown: boolean, dt: number) {
       if (spoolUp) state.targetRotorSpeed += 25 * dt
       if (spoolDown) state.targetRotorSpeed -= 35 * dt
+      // Hard boundary: Space alone can never exceed MAX_ROTOR_RPM
       state.targetRotorSpeed = THREE.MathUtils.clamp(
         state.targetRotorSpeed,
         0,
@@ -78,6 +82,8 @@ export function createHelicopter(padWorldPos: THREE.Vector3, onLoaded?: (h: Heli
         state.targetRotorSpeed,
         4 * dt,
       )
+      // Belt-and-braces: RPM itself is also bounded
+      state.rotorSpeed = THREE.MathUtils.clamp(state.rotorSpeed, 0, state.maxRotorSpeed)
 
       // Main rotor spins about its LOCAL Z, rear rotor about its LOCAL X —
       // exactly the viewer's formulas (correct for this model's bakes).

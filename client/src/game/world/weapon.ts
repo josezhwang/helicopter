@@ -1,12 +1,11 @@
 import * as THREE from 'three'
-
-const FIRE_RATE = 0.11 // seconds between shots
-const MAG_SIZE = 30
-const RANGE = 300
+import { WEAPONS, type WeaponDef, type WeaponId } from './weapons'
 
 export class Weapon {
-  ammo = MAG_SIZE
+  def: WeaponDef = WEAPONS['primary-handgun']
+  ammo = this.def.magSize
   reloading = false
+  private reloadTimer = 0
   private cooldown = 0
   private scene: THREE.Scene
   private camera: THREE.PerspectiveCamera
@@ -34,6 +33,19 @@ export class Weapon {
     }
   }
 
+  /** Own a new weapon: full mag, no reload in progress. */
+  setWeapon(id: WeaponId) {
+    this.def = WEAPONS[id]
+    this.ammo = this.def.magSize
+    this.reloading = false
+    this.reloadTimer = 0
+    this.cooldown = 0
+  }
+
+  get weaponId(): WeaponId {
+    return this.def.id
+  }
+
   tryFire(input: { shooting: boolean }, dt: number, targets: THREE.Object3D[]) {
     this.cooldown -= dt
     this.flashTimer -= dt
@@ -41,23 +53,27 @@ export class Weapon {
 
     if (!input.shooting || this.reloading || this.cooldown > 0 || this.ammo <= 0) return
 
-    this.cooldown = FIRE_RATE
+    this.cooldown = this.def.fireRate
     this.ammo--
     this.onShoot?.()
 
-    // Muzzle flash
+    // Muzzle flash + hitscan with per-weapon spread
     const origin = this.camera.getWorldPosition(new THREE.Vector3())
     const dir = this.camera.getWorldDirection(new THREE.Vector3())
+    if (this.def.spread > 0) {
+      const spreadX = (Math.random() - 0.5) * this.def.spread
+      const spreadY = (Math.random() - 0.5) * this.def.spread
+      dir.add(new THREE.Vector3(spreadX, spreadY, 0)).normalize()
+    }
     this.flashLight.position.copy(origin).addScaledVector(dir, 1.2)
     this.flashLight.intensity = 30
 
-    // Hitscan
-    const raycaster = new THREE.Raycaster(origin, dir, 0.5, RANGE)
+    const raycaster = new THREE.Raycaster(origin, dir, 0.5, this.def.range)
     const hits = raycaster.intersectObjects(targets, true)
 
     const tracer = this.tracerPool.find((t) => !t.visible)
     if (tracer) {
-      const end = hits.length > 0 ? hits[0].point : origin.clone().addScaledVector(dir, RANGE)
+      const end = hits.length > 0 ? hits[0].point : origin.clone().addScaledVector(dir, this.def.range)
       const start = origin.clone().addScaledVector(dir, 1.4)
       const len = start.distanceTo(end)
       tracer.position.copy(start).lerp(end, 0.5)
@@ -65,6 +81,7 @@ export class Weapon {
       tracer.scale.set(1, 1, len)
       tracer.visible = true
       const mat = tracer.material as THREE.MeshBasicMaterial
+      mat.color.setHex(this.def.color)
       mat.opacity = 0.9
       const fade = () => {
         mat.opacity -= 0.12
@@ -76,15 +93,20 @@ export class Weapon {
   }
 
   reload() {
-    if (this.reloading || this.ammo === MAG_SIZE) return
+    if (this.reloading || this.ammo === this.def.magSize) return
     this.reloading = true
-    setTimeout(() => {
-      this.ammo = MAG_SIZE
-      this.reloading = false
-    }, 1800)
+    this.reloadTimer = this.def.reloadTime
   }
 
+  /** Call once per frame so reload timers progress even while flying. */
   tick(dt: number) {
-    this.cooldown -= dt
+    this.cooldown = Math.max(0, this.cooldown - dt)
+    if (this.reloading) {
+      this.reloadTimer -= dt
+      if (this.reloadTimer <= 0) {
+        this.ammo = this.def.magSize
+        this.reloading = false
+      }
+    }
   }
 }

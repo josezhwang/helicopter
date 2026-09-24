@@ -20,7 +20,7 @@ const canopyMats = [
   new THREE.MeshStandardMaterial({ color: 0x33592a, roughness: 1 }),
 ]
 
-export function createForest(): THREE.Group {
+export function createForest(circles?: Array<{ x: number; z: number; r: number }>): THREE.Group {
   const group = new THREE.Group()
   const rng = mulberry32(20260924)
 
@@ -63,12 +63,15 @@ export function createForest(): THREE.Group {
     tree.scale.setScalar(scale)
     tree.rotation.y = rng() * Math.PI * 2
     group.add(tree)
+
+    // Solid trunk the player must walk around
+    circles?.push({ x, z, r: 0.6 * scale + 0.25 })
   }
 
   return group
 }
 
-export function createRocks(): THREE.Group {
+export function createRocks(circles?: Array<{ x: number; z: number; r: number }>): THREE.Group {
   const group = new THREE.Group()
   const rng = mulberry32(777)
   const rockMat = new THREE.MeshStandardMaterial({ color: 0x83868c, roughness: 1 })
@@ -90,6 +93,9 @@ export function createRocks(): THREE.Group {
     rock.castShadow = true
     rock.receiveShadow = true
     group.add(rock)
+
+    // Big rocks are solid; pebbles stay walkable
+    if (scale > 1.4) circles?.push({ x, z, r: scale * 0.8 })
   }
 
   return group

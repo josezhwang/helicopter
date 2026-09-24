@@ -4,25 +4,37 @@ export interface GameState {
   reloading: boolean
   inHelicopter: boolean
   nearHelicopter: boolean
+  nearPickupLabel: string
   carryingFlag: boolean
   score: number
   message: string
   /** Rotor RPM while piloting (0–1000, viewer-style x10 readout). */
   rotorRpm: number
+  /** Player health — starts at 100. */
+  health: number
+  weaponName: string
+  weaponPower: number
+  /** True once the flag is captured: victory screen shows. */
+  finished: boolean
 }
 
 type Listener = (s: GameState) => void
 
 export const gameState: GameState = {
-  ammo: 30,
-  maxAmmo: 30,
+  ammo: 12,
+  maxAmmo: 12,
   reloading: false,
   inHelicopter: false,
   nearHelicopter: false,
+  nearPickupLabel: '',
   carryingFlag: false,
   score: 0,
   rotorRpm: 0,
-  message: 'Steal the RED flag from the enemy base and bring it to your BLUE base. [E] to board the helicopter.',
+  health: 100,
+  weaponName: 'Primary Handgun',
+  weaponPower: 5,
+  finished: false,
+  message: 'Steal the RED flag from the enemy base and bring it to your BLUE base to WIN. [E] to interact.',
 }
 
 const listeners = new Set<Listener>()
