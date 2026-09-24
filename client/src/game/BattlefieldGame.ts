@@ -223,7 +223,11 @@ export class BattlefieldGame {
       this.inHeli = true
       this.heli.setParked(false)
       this.heliFlightAltitude = heliPos.y
+<<<<<<< HEAD
       setGameState({ inHelicopter: true, message: 'Spooling up… W/S forward, A/D turn, ↑/↓ climb, ←/→ roll, E to dismount.' })
+=======
+      setGameState({ inHelicopter: true, message: 'Press SPACE to spin up the rotor. W/S fly, A/D turn, ↑/↓ altitude, ←/→ roll, E to exit.' })
+>>>>>>> dd8169b (OK)
     }
   }
 
@@ -237,8 +241,14 @@ export class BattlefieldGame {
       return
     }
 
+<<<<<<< HEAD
     // --- Player-piloted flight model (controls from the standalone viewer:
     //     W/S forward, A/D turn, Arrows for altitude + roll; nose is -Z) ---
+=======
+    // --- Player-piloted flight model (viewer formulas, adapted):
+    //     SPACE spools the propeller, W/S fly, A/D turn, Arrows altitude+roll.
+    //     Model nose is +Z (tail rotor node sits at z = -4.43). ---
+>>>>>>> dd8169b (OK)
     const turnInput = (this.input.left ? 1 : 0) - (this.input.right ? 1 : 0)
     const fwdInput = (this.input.forward ? 1 : 0) - (this.input.back ? 1 : 0)
     const climbing = this.input.arrowUp
@@ -246,17 +256,30 @@ export class BattlefieldGame {
     const rollLeft = this.input.arrowLeft
     const rollRight = this.input.arrowRight
 
+<<<<<<< HEAD
     // Rotor must be spooled up (~RPM 55+) before the heli responds
+=======
+    // SPACE spins up the propeller, Shift spools it down (viewer-style)
+    this.heli.updateRotorInput(this.input.jump, this.input.sprint, dt)
+
+    // Rotor must be spooled up before the heli responds
+>>>>>>> dd8169b (OK)
     const rpm = this.heli.getRotorSpeed()
     const liftReady = THREE.MathUtils.clamp((rpm - 40) / 30, 0, 1)
 
     this.heliYaw += turnInput * dt * 1.1 * liftReady
     const yaw = this.heliYaw
 
+<<<<<<< HEAD
     // Model's nose is local -Z (confirmed by the viewer's translateZ(-speed));
     // world forward for object rotation.y = yaw is (-sin yaw, -cos yaw).
     const dirX = -Math.sin(yaw)
     const dirZ = -Math.cos(yaw)
+=======
+    // Nose direction = local +Z rotated by yaw: (sin yaw, cos yaw)
+    const dirX = Math.sin(yaw)
+    const dirZ = Math.cos(yaw)
+>>>>>>> dd8169b (OK)
 
     const targetThrottle = fwdInput * liftReady
     this.heliThrottle = THREE.MathUtils.lerp(this.heliThrottle, targetThrottle, dt * 1.2)
@@ -280,12 +303,21 @@ export class BattlefieldGame {
     heliObj.position.x = cx
     heliObj.position.z = cz
 
+<<<<<<< HEAD
     // Bank: Arrow keys roll lean (viewer-style), turns add a little bank
+=======
+    // Bank: Arrow keys roll lean (viewer-style), turns add a little bank.
+    // Forward flight pitches the nose down (+rotation.x lowers the +Z nose).
+>>>>>>> dd8169b (OK)
     let targetRoll = 0
     if (rollLeft) targetRoll = 0.3
     else if (rollRight) targetRoll = -0.3
     else targetRoll = -turnInput * 0.18 * Math.abs(this.heliThrottle)
+<<<<<<< HEAD
     const targetPitch = -this.heliThrottle * 0.22
+=======
+    const targetPitch = this.heliThrottle * 0.22
+>>>>>>> dd8169b (OK)
     this.heliRoll = THREE.MathUtils.lerp(this.heliRoll, targetRoll, dt * 5)
     this.heliPitch = THREE.MathUtils.lerp(this.heliPitch, targetPitch, dt * 2.5)
 
@@ -295,7 +327,11 @@ export class BattlefieldGame {
       heliObj.rotation.set(this.heliPitch, yaw, this.heliRoll)
     }
 
+<<<<<<< HEAD
     // Camera chase: behind and above the heli (behind = +Z side, since nose is -Z)
+=======
+    // Camera chase: behind and above the heli (behind = tail side, -nose)
+>>>>>>> dd8169b (OK)
     const back = new THREE.Vector3(-dirX, 0, -dirZ).multiplyScalar(18)
     const camTarget = new THREE.Vector3(
       heliObj.position.x + back.x,
